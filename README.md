@@ -65,5 +65,18 @@ set that env var in `aws-learn-app/.env.local` when you deploy the portal.
 ## Deploying statically
 
 `npm run build` → `dist/`. The router uses history URLs (`/learn/trees`), so the
-host needs an SPA fallback to `index.html` (Netlify `_redirects`, Vercel default,
-or Firebase Hosting `rewrites`).
+host needs an SPA fallback to `index.html`:
+
+- **Vercel**: `vercel.json` (included) rewrites all routes to `/index.html`.
+- **Firebase Hosting**: `firebase.json` (included) has the same rewrite.
+- **Netlify**: add `public/_redirects` with `/* /index.html 200`.
+
+### Enabling Firestore sync on Vercel
+
+Vite inlines env vars at **build** time, so they must be set in Vercel before the
+deployment is built: Project → Settings → Environment Variables → add
+`VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`,
+`VITE_FIREBASE_APP_ID` → **redeploy**. Plus the one-time Firebase setup: enable
+Anonymous sign-in and deploy the `dmatProgress` rules (see above). When it's
+active the sidebar badge reads “firebase: synced” and the network tab shows
+requests to `firestore.googleapis.com` (there is no app API server).
