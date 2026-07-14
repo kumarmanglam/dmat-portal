@@ -2,8 +2,9 @@
 // Optional Firebase (client SDK). If the VITE_FIREBASE_* env vars
 // are absent, the app runs purely on localStorage — no errors, no
 // network calls. When present:
-//   - anonymous auth identifies this browser
-//   - progress lives at dmatProgress/{uid} in Firestore
+//   - anonymous auth satisfies the security rules
+//   - progress lives at dmatProgress/{username} in Firestore,
+//     keyed by the app-level login (kumar.m / varsha.k)
 // ============================================================
 import { initializeApp, type FirebaseApp } from "firebase/app";
 import {
@@ -47,20 +48,20 @@ export function waitForUser(): Promise<User | null> {
   });
 }
 
-export async function fetchRemote(uid: string): Promise<ProgressState | null> {
+export async function fetchRemote(userKey: string): Promise<ProgressState | null> {
   try {
     const db = getFirestore(ensureApp());
-    const snap = await getDoc(doc(db, "dmatProgress", uid));
+    const snap = await getDoc(doc(db, "dmatProgress", userKey));
     return snap.exists() ? (snap.data() as ProgressState) : null;
   } catch {
     return null;
   }
 }
 
-export async function pushRemote(uid: string, state: ProgressState): Promise<boolean> {
+export async function pushRemote(userKey: string, state: ProgressState): Promise<boolean> {
   try {
     const db = getFirestore(ensureApp());
-    await setDoc(doc(db, "dmatProgress", uid), state, { merge: false });
+    await setDoc(doc(db, "dmatProgress", userKey), state, { merge: false });
     return true;
   } catch {
     return false;

@@ -27,9 +27,23 @@ are **generated deterministically from fixed seeds** — every attempt is the sa
 paper, and generated learn-page drills use different seeds so they never leak
 mock content.
 
+## Login & users
+
+The portal is gated by a login screen with two hardcoded users (client-side
+check — a convenience gate for separating progress, not real security):
+
+| Username | Password |
+|---|---|
+| `kumar.m` | `securehigh` |
+| `varsha.k` | `securehigh` |
+
+All tracking — topic completion, question answers, mock attempts, last topic —
+is **per user**. Sessions survive reloads; Sign out lives in the sidebar.
+Users are defined in `src/lib/auth.tsx`.
+
 ## Progress persistence
 
-- **Always**: localStorage (`dmat-portal-progress-v1`) — survives visits with zero setup.
+- **Always**: localStorage (`dmat-portal-progress-v1:<username>`) — survives visits with zero setup. Progress recorded before the login feature is auto-migrated to `kumar.m`.
 - **Optional Firebase sync** (question/answer tracking + completion across devices):
   1. Firebase Console → Project settings → add a **Web app**, copy the config.
   2. Copy `.env.example` → `.env` and fill `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`.
@@ -37,8 +51,10 @@ mock content.
   4. Deploy the updated rules (already added in `aws-learn-app/firestore.rules`):
      `firebase deploy --only firestore:rules` from `aws-learn-app`.
 
-  Data lives at `dmatProgress/{uid}` — one doc per anonymous browser identity;
-  newest snapshot (by `updatedAt`) wins on load, writes are debounced.
+  Data lives at `dmatProgress/{username}` — one doc per portal user, so each
+  person's progress follows them across devices. Anonymous Firebase auth only
+  satisfies the security rules; identity comes from the portal login. Newest
+  snapshot (by `updatedAt`) wins on load, writes are debounced.
 
 ## Link from aws-learn-app
 

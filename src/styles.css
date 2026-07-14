@@ -111,6 +111,66 @@ button { font-family: inherit; }
   font-size: 0.78rem;
   font-weight: 700;
 }
+.userbox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-bottom: 14px;
+  background: var(--bg);
+}
+
+/* ---------- Login ---------- */
+.login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 32px 34px;
+  width: 100%;
+  max-width: 380px;
+}
+.login-label {
+  display: block;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  margin: 12px 0 4px;
+}
+.login-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 0.92rem;
+  background: var(--bg);
+  color: var(--ink);
+}
+.login-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface);
+}
+.login-error {
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--red-soft);
+  color: var(--red);
+  font-size: 0.84rem;
+}
+
 .sync-badge {
   margin-top: 16px;
   font-family: "IBM Plex Mono", monospace;
@@ -332,8 +392,96 @@ details.faq p { color: var(--ink-soft); margin: 10px 0 0; font-size: 0.9rem; }
 
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+/* ---------- Mobile navigation (hamburger + drawer) ---------- */
+.content-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.mobile-topbar { display: none; }
+.sidebar-backdrop { display: none; }
+
 @media (max-width: 900px) {
   .grid2, .grid3 { grid-template-columns: 1fr; }
-  .sidebar { display: none; }
   .main { padding: 20px 16px 60px; }
+
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(238, 240, 244, 0.94);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line);
+    padding: 10px 14px;
+  }
+  .mobile-topbar .brand-sm {
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+    font-size: 0.98rem;
+  }
+  .mobile-topbar .pct {
+    margin-left: auto;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .hamburger {
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .hamburger:active { border-color: var(--accent); }
+
+  /* sidebar becomes an off-canvas drawer */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100vh;
+    width: min(var(--sidebar-w), 84vw);
+    transform: translateX(-105%);
+    transition: transform 0.25s ease;
+    z-index: 70;
+    box-shadow: 4px 0 24px rgba(20, 24, 31, 0.18);
+  }
+  .sidebar.open { transform: translateX(0); }
+
+  .sidebar-backdrop.show {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 24, 31, 0.35);
+    z-index: 60;
+  }
+
+  .sidebar .drawer-close {
+    position: absolute;
+    top: 14px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+  }
+
+  /* keep the exam header below the mobile topbar instead of under it */
+  .exam-top { top: 58px; }
+}
+@media (min-width: 901px) {
+  .sidebar .drawer-close { display: none; }
 }

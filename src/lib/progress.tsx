@@ -3,6 +3,10 @@
 // Firestore write-through (debounced). localStorage is written
 // synchronously on every change, so state always persists across
 // visits even with no Firebase configured.
+//
+// Storage is PER USER: the logged-in username keys both the
+// localStorage bucket and the Firestore doc (dmatProgress/{user}),
+// so kumar.m and varsha.k each have independent progress.
 // ============================================================
 import {
   createContext,
@@ -18,11 +22,22 @@ import { EMPTY_PROGRESS, type MockAttempt, type ProgressState } from "./types";
 import { fetchRemote, firebaseEnabled, pushRemote, waitForUser } from "./firebase";
 import { TOPICS } from "./topics";
 
-const LS_KEY = "dmat-portal-progress-v1";
+const LS_PREFIX = "dmat-portal-progress-v1";
+const lsKey = (userKey: string) => `${LS_PREFIX}:${userKey}`;
 
-function loadLocal(): ProgressState {
+function loadLocal(userKey: string): ProgressState {
   try {
-    const raw = localStorage.getItem(LS_KEY);
+    let raw = localStorage.getItem(lsKey(userKey));
+    // One-time migration: progress saved before login existed
+    // (un-suffixed key) belongs to kumar.m.
+    if (!raw && userKey === "kumar.m") {
+      const legacy = localStorage.getItem(LS_PREFIX);
+      if (legacy) {
+        localStorage.setItem(lsKey(userKey), legacy);
+        localStorage.removeItem(LS_PREFIX);
+        raw = legacy;
+      }
+    }
     if (!raw) return { ...EMPTY_PROGRESS };
     return { ...EMPTY_PROGRESS, ...(JSON.parse(raw) as ProgressState) };
   } catch {
@@ -30,9 +45,9 @@ function loadLocal(): ProgressState {
   }
 }
 
-function saveLocal(state: ProgressState) {
+function saveLocal(userKey: string, state: ProgressState) {
   try {
-    localStorage.setItem(LS_KEY, JSON.stringify(state));
+    localStorage.setItem(lsKey(userKey), JSON.stringify(state));
   } catch {
     /* storage full/blocked — app still works in-memory */
   }
@@ -53,33 +68,41 @@ interface ProgressApi {
 
 const Ctx = createContext<ProgressApi | null>(null);
 
-export function ProgressProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<ProgressState>(loadLocal);
+export function ProgressProvider({
+  userKey,
+  children,
+}: {
+  userKey: string;
+  children: ReactNode;
+}) {
+  const [state, setState] = useState<ProgressState>(() => loadLocal(userKey));
   const [sync, setSync] = useState<SyncStatus>(firebaseEnabled ? "connecting" : "local");
-  const uidRef = useRef<string | null>(null);
+  const authedRef = useRef(false); // anonymous Firebase auth completed
   const pushTimer = useRef<number | null>(null);
 
-  // Connect to Firebase (if configured) and merge remote state once.
+  // Connect to Firebase (if configured) and merge this user's remote
+  // snapshot once. Anonymous auth only satisfies the security rules —
+  // the document is keyed by the app-level username.
   useEffect(() => {
     if (!firebaseEnabled) return;
     let cancelled = false;
     (async () => {
-      const user = await waitForUser();
+      const fbUser = await waitForUser();
       if (cancelled) return;
-      if (!user) {
+      if (!fbUser) {
         setSync("error");
         return;
       }
-      uidRef.current = user.uid;
-      const remote = await fetchRemote(user.uid);
+      authedRef.current = true;
+      const remote = await fetchRemote(userKey);
       if (cancelled) return;
       setState((local) => {
         // newest snapshot wins
         if (remote && remote.updatedAt > local.updatedAt) {
-          saveLocal(remote);
+          saveLocal(userKey, remote);
           return remote;
         }
-        if (local.updatedAt > 0) void pushRemote(user.uid, local);
+        if (local.updatedAt > 0) void pushRemote(userKey, local);
         return local;
       });
       setSync("synced");
@@ -87,22 +110,25 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [userKey]);
 
-  const commit = useCallback((updater: (prev: ProgressState) => ProgressState) => {
-    setState((prev) => {
-      const next = { ...updater(prev), updatedAt: Date.now() };
-      saveLocal(next);
-      if (firebaseEnabled && uidRef.current) {
-        if (pushTimer.current) window.clearTimeout(pushTimer.current);
-        pushTimer.current = window.setTimeout(async () => {
-          const ok = await pushRemote(uidRef.current!, next);
-          setSync(ok ? "synced" : "error");
-        }, 800);
-      }
-      return next;
-    });
-  }, []);
+  const commit = useCallback(
+    (updater: (prev: ProgressState) => ProgressState) => {
+      setState((prev) => {
+        const next = { ...updater(prev), updatedAt: Date.now() };
+        saveLocal(userKey, next);
+        if (firebaseEnabled && authedRef.current) {
+          if (pushTimer.current) window.clearTimeout(pushTimer.current);
+          pushTimer.current = window.setTimeout(async () => {
+            const ok = await pushRemote(userKey, next);
+            setSync(ok ? "synced" : "error");
+          }, 800);
+        }
+        return next;
+      });
+    },
+    [userKey]
+  );
 
   const api = useMemo<ProgressApi>(() => {
     const completedCount = Object.keys(state.completedTopics).length;
