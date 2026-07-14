@@ -25,6 +25,12 @@ const USERS: UserDef[] = [
 
 const SESSION_KEY = "dmat-portal-session-v1";
 
+// Used by the progress API client to authenticate requests.
+export function credsFor(username: string): { username: string; password: string } | null {
+  const u = USERS.find((x) => x.username === username);
+  return u ? { username: u.username, password: u.password } : null;
+}
+
 function loadSession(): string | null {
   try {
     const u = localStorage.getItem(SESSION_KEY);

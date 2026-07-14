@@ -44,17 +44,14 @@ Users are defined in `src/lib/auth.tsx`.
 ## Progress persistence
 
 - **Always**: localStorage (`dmat-portal-progress-v1:<username>`) — survives visits with zero setup. Progress recorded before the login feature is auto-migrated to `kumar.m`.
-- **Optional Firebase sync** (question/answer tracking + completion across devices):
-  1. Firebase Console → Project settings → add a **Web app**, copy the config.
-  2. Copy `.env.example` → `.env` and fill `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`.
-  3. Firebase Console → Authentication → Sign-in method → enable **Anonymous**.
-  4. Deploy the updated rules (already added in `aws-learn-app/firestore.rules`):
-     `firebase deploy --only firestore:rules` from `aws-learn-app`.
-
-  Data lives at `dmatProgress/{username}` — one doc per portal user, so each
-  person's progress follows them across devices. Anonymous Firebase auth only
-  satisfies the security rules; identity comes from the portal login. Newest
-  snapshot (by `updatedAt`) wins on load, writes are debounced.
+- **DB sync via `/api/progress`** (a Vercel serverless function in `api/progress.ts`):
+  the browser calls the API with the portal login credentials; the API writes to
+  Firestore at `dmatProgress/{username}` using the **Firebase Admin SDK** — the
+  same model as aws-learn-app, so **no security-rules deploy and no auth-provider
+  setup** are needed. It activates as soon as the three service-account env vars
+  are set on Vercel (see `.env.example`). Newest snapshot (by `updatedAt`) wins
+  on load; writes are debounced. Without the env vars — or on plain `npm run dev`,
+  which has no `/api` — the app runs in local-only mode (sidebar badge shows which).
 
 ## Link from aws-learn-app
 
@@ -71,12 +68,15 @@ host needs an SPA fallback to `index.html`:
 - **Firebase Hosting**: `firebase.json` (included) has the same rewrite.
 - **Netlify**: add `public/_redirects` with `/* /index.html 200`.
 
-### Enabling Firestore sync on Vercel
+### Enabling DB sync on Vercel
 
-Vite inlines env vars at **build** time, so they must be set in Vercel before the
-deployment is built: Project → Settings → Environment Variables → add
-`VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`,
-`VITE_FIREBASE_APP_ID` → **redeploy**. Plus the one-time Firebase setup: enable
-Anonymous sign-in and deploy the `dmatProgress` rules (see above). When it's
-active the sidebar badge reads “firebase: synced” and the network tab shows
-requests to `firestore.googleapis.com` (there is no app API server).
+Project → Settings → Environment Variables → add the three service-account vars
+(same values as `aws-learn-app/.env.local`):
+
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_CLIENT_EMAIL`
+- `FIREBASE_PRIVATE_KEY` (paste the PEM with literal `\n` sequences)
+
+Then redeploy. That's it — the Admin SDK bypasses Firestore security rules, so
+nothing needs enabling or deploying in the Firebase console. When active, the
+sidebar badge reads “db: synced” and the network tab shows `/api/progress` calls.

@@ -19,7 +19,7 @@ import {
   type ReactNode,
 } from "react";
 import { EMPTY_PROGRESS, type MockAttempt, type ProgressState } from "./types";
-import { fetchRemote, firebaseEnabled, pushRemote, waitForUser } from "./firebase";
+import { fetchRemote, pushRemote } from "./api";
 import { TOPICS } from "./topics";
 
 const LS_PREFIX = "dmat-portal-progress-v1";
@@ -76,26 +76,23 @@ export function ProgressProvider({
   children: ReactNode;
 }) {
   const [state, setState] = useState<ProgressState>(() => loadLocal(userKey));
-  const [sync, setSync] = useState<SyncStatus>(firebaseEnabled ? "connecting" : "local");
-  const authedRef = useRef(false); // anonymous Firebase auth completed
+  const [sync, setSync] = useState<SyncStatus>("connecting");
+  const apiRef = useRef(false); // /api/progress reachable + configured
   const pushTimer = useRef<number | null>(null);
 
-  // Connect to Firebase (if configured) and merge this user's remote
-  // snapshot once. Anonymous auth only satisfies the security rules —
-  // the document is keyed by the app-level username.
+  // Probe the progress API once and merge this user's remote snapshot.
+  // On `npm run dev` (no /api) or missing server credentials the app
+  // stays in localStorage-only mode.
   useEffect(() => {
-    if (!firebaseEnabled) return;
     let cancelled = false;
     (async () => {
-      const fbUser = await waitForUser();
+      const { available, state: remote } = await fetchRemote(userKey);
       if (cancelled) return;
-      if (!fbUser) {
-        setSync("error");
+      if (!available) {
+        setSync("local");
         return;
       }
-      authedRef.current = true;
-      const remote = await fetchRemote(userKey);
-      if (cancelled) return;
+      apiRef.current = true;
       setState((local) => {
         // newest snapshot wins
         if (remote && remote.updatedAt > local.updatedAt) {
@@ -117,7 +114,7 @@ export function ProgressProvider({
       setState((prev) => {
         const next = { ...updater(prev), updatedAt: Date.now() };
         saveLocal(userKey, next);
-        if (firebaseEnabled && authedRef.current) {
+        if (apiRef.current) {
           if (pushTimer.current) window.clearTimeout(pushTimer.current);
           pushTimer.current = window.setTimeout(async () => {
             const ok = await pushRemote(userKey, next);

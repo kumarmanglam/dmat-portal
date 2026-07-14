@@ -2,7 +2,6 @@ import { NavLink } from "react-router-dom";
 import { MODULES, topicsOfModule } from "../lib/topics";
 import { useProgress } from "../lib/progress";
 import { useAuth } from "../lib/auth";
-import { firebaseEnabled } from "../lib/firebase";
 
 export function Sidebar({
   open = false,
@@ -72,13 +71,15 @@ export function Sidebar({
       ))}
 
       <div className="sync-badge">
-        {firebaseEnabled
-          ? sync === "synced"
-            ? <>firebase: <b>synced</b></>
-            : sync === "connecting"
-              ? "firebase: connecting…"
-              : "firebase: offline · using local"
-          : "progress: saved locally"}
+        {sync === "synced" ? (
+          <>db: <b>synced</b></>
+        ) : sync === "connecting" ? (
+          "db: connecting…"
+        ) : sync === "error" ? (
+          "db: offline · saved locally"
+        ) : (
+          "progress: saved locally"
+        )}
       </div>
     </aside>
   );
