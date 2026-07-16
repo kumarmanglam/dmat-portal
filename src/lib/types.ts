@@ -26,10 +26,32 @@ export interface TopicQuestion {
   explain: string;
 }
 
+// A concrete, step-by-step case walked through before practice.
+export interface WorkedExample {
+  scenario: string; // the concrete setup (1–2 sentences)
+  steps: string[]; // ordered reasoning steps
+  result: string; // the payoff / answer line
+}
+
+// Optional depth, collapsed by default so the page stays short.
+export interface DeepDive {
+  title: string;
+  body: string;
+}
+
 export interface TopicContent {
   id: string;
+  whyItMatters?: string; // one line: the real dMAT scenario / job task this unlocks
   intro: string; // one short plain-language paragraph (the mental model)
+  analogy?: string; // a vivid, concrete comparison for the core idea
   bullets: string[]; // max ~5 how-it-works bullets
+  workedExample?: WorkedExample; // one concrete case, worked step-by-step
+  gotchas?: string[]; // common mistakes / "X is NOT Y" contrasts
+  quickCheck?: TopicQuestion; // single retrieval question, right after the concept
+  deepDive?: DeepDive[]; // optional expandable depth
+  recap?: string; // 2-line restatement of the mental model
+  related?: string[]; // ids of related topics to cross-link
+  diagram?: string; // key into the DIAGRAMS registry (interactive node graph)
   drill?: "figures" | "latin"; // core topics with generated visual drills
   questions: TopicQuestion[];
 }
@@ -103,6 +125,7 @@ export interface ProgressState {
   completedTopics: Record<string, string>; // topicId -> ISO date
   lastTopic: string | null;
   topicAnswers: Record<string, Record<number, number>>; // topicId -> qIndex -> chosen
+  viewedDiagrams: Record<string, string>; // topicId -> ISO date (soft completion signal)
   mockAttempts: MockAttempt[];
   updatedAt: number;
 }
@@ -111,6 +134,7 @@ export const EMPTY_PROGRESS: ProgressState = {
   completedTopics: {},
   lastTopic: null,
   topicAnswers: {},
+  viewedDiagrams: {},
   mockAttempts: [],
   updatedAt: 0,
 };

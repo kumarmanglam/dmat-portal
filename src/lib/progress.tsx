@@ -61,6 +61,7 @@ interface ProgressApi {
   setTopicComplete: (topicId: string, done: boolean) => void;
   setLastTopic: (topicId: string) => void;
   recordTopicAnswer: (topicId: string, qIndex: number, chosen: number) => void;
+  markDiagramViewed: (topicId: string) => void;
   saveMockAttempt: (attempt: MockAttempt) => void;
   completedCount: number;
   overallPct: number;
@@ -151,6 +152,12 @@ export function ProgressProvider({
             [topicId]: { ...(p.topicAnswers[topicId] ?? {}), [qIndex]: chosen },
           },
         })),
+      markDiagramViewed: (topicId) =>
+        commit((p) =>
+          p.viewedDiagrams[topicId]
+            ? p
+            : { ...p, viewedDiagrams: { ...p.viewedDiagrams, [topicId]: new Date().toISOString() } }
+        ),
       saveMockAttempt: (attempt) =>
         commit((p) => ({ ...p, mockAttempts: [...p.mockAttempts, attempt].slice(-10) })),
     };

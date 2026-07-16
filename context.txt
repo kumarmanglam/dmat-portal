@@ -1,0 +1,152 @@
+================================================================
+dMAT PORTAL — PROJECT CONTEXT
+================================================================
+
+WHAT IT IS
+----------
+A standalone single-page web app for preparing the dMAT (Digital Master
+Assessment Test), Computer Science track. It teaches the syllabus, lets the
+user drill dMAT-style questions, tracks coverage, and provides one full timed
+mock exam. It is completely independent from the sibling "aws-learn-app"
+project (its own routes, state, and logic).
+
+TECH STACK
+----------
+- Vite + React 18 + TypeScript (client-side SPA).
+- react-router-dom v6 for routing (history/BrowserRouter URLs).
+- @xyflow/react (React Flow) for the interactive topic diagrams; lazy-loaded
+  into its own chunk so it stays out of the initial bundle.
+- No CSS framework — a single hand-written stylesheet (src/styles.css).
+  Fonts: Fraunces, Inter, IBM Plex Mono (Google Fonts).
+- Backend is optional: one Vercel serverless function (api/progress.ts) that
+  uses the Firebase Admin SDK to read/write Firestore.
+- Scripts: `npm run dev` (port 5173), `npm run build` (tsc + vite build),
+  `npm run preview`.
+
+ROUTES / PAGES (src/pages)
+--------------------------
+- /              Dashboard — exam facts, syllabus coverage %, Start Mock Exam,
+                 Continue Learning.
+- /exam-details  ExamDetails — static reference: module structure, timing,
+                 scoring, logistics, FAQ.
+- /learn/:topic  TopicPage — one page per topic (20 topics). Retention-oriented
+                 flow: "why it matters" -> mental model + analogy -> how-it-works
+                 bullets -> interactive diagram (graph-shaped topics only) ->
+                 worked example -> common mistakes -> optional deep-dive ->
+                 quick-check retrieval question -> dMAT-style practice -> recap
+                 -> related-topic links -> "mark complete". Core topics also
+                 show generated visual drills (figure sequences / latin squares).
+- /tracker       Tracker — coverage checklist with per-module + overall
+                 progress bars.
+- /mock-exam     MockExam — ONE full timed mock (see below).
+- Unknown paths fall back to the Dashboard.
+
+App shell (src/App.tsx): desktop sidebar that collapses into an off-canvas
+hamburger drawer below 900px. Structure is AuthProvider -> Gate (shows Login
+if no user) -> ProgressProvider (keyed by username so state never bleeds
+between users) -> BrowserRouter -> Shell.
+
+SYLLABUS / CONTENT (src/lib/topics.ts, src/lib/content)
+-------------------------------------------------------
+6 modules, 20 topics total:
+- Core Module: Figure Sequences, Mathematical Equations, Latin Squares.
+- Theoretical CS: Automata Basics, Complexity Classes (P/NP), Big-O Comparison.
+- SE & Data Structures: OOP Design Patterns, Trees, Graphs, System Architecture.
+- Databases: Relational Algebra, SQL Optimization, Normalization & Transactions.
+- Networks & Security: OSI & TCP/IP, Routing Basics, Encryption & Hashing,
+  Security Goals (CIA+A).
+- Operating Systems: Process Synchronization, Memory Management, Deadlocks.
+
+Each topic has a short intro (the mental model), ~5 bullets, and a set of
+multiple-choice questions with explanations. Content lives per-module under
+src/lib/content/.
+
+MOCK EXAM (src/lib/mock/exam.ts)
+--------------------------------
+One fixed paper with real dMAT counts/timing and NO negative marking:
+  Figure Sequences        20 items · 25 min
+  Mathematical Equations  20 items · 25 min
+  Latin Squares           16 items · 20 min
+  Break                            · 30 min (skippable)
+  Subject Module (CS)     24 items · 90 min
+Core items are GENERATED DETERMINISTICALLY from fixed seeds (src/lib/gen/*:
+figures.ts, equations.ts, latin.ts + a seeded RNG in src/lib/rng.ts), so every
+attempt is the same paper. Learn-page drills use DIFFERENT seeds so they never
+leak mock content. Difficulty follows a ramp (easy -> hard) per section.
+
+AUTH / USERS (src/lib/auth.tsx)
+-------------------------------
+Login screen gates the app. Two hardcoded users, checked client-side:
+  kumar.m  / securehigh   (Kumar M)
+  varsha.k / securehigh   (Varsha K)
+NOTE: this is a convenience gate to separate the two users' progress, NOT real
+security (anyone with the JS bundle can read the credentials). Session is
+stored in localStorage and survives reloads; Sign out is in the sidebar. The
+username doubles as the progress key.
+
+PROGRESS PERSISTENCE (src/lib/progress.tsx, src/lib/api.ts)
+-----------------------------------------------------------
+All tracking is PER USER: topic completion, per-question answers, mock
+attempts (last 10 kept), last-visited topic, and viewed diagrams (a soft
+"explored" signal; also drives the Dashboard "Review weak topics" widget,
+which surfaces the lowest quiz-accuracy topics).
+- ALWAYS: localStorage, key `dmat-portal-progress-v1:<username>`, written
+  synchronously on every change. Zero setup, survives visits. Progress saved
+  before login existed is auto-migrated to kumar.m.
+- OPTIONAL DB sync via /api/progress (Vercel serverless function): browser
+  sends portal login creds in x-dmat-user / x-dmat-pass headers; the function
+  writes Firestore doc dmatProgress/{username} via the Firebase Admin SDK
+  (service-account creds), so NO Firestore security-rules deploy and NO
+  auth-provider setup are needed. Newest snapshot wins on load (by updatedAt);
+  writes are debounced (~800ms).
+- If the API is unreachable (plain `npm run dev` has no /api) or the server
+  env vars are missing, the app silently stays in local-only mode. The sidebar
+  badge shows the current sync status: local / connecting / synced / error.
+
+BACKEND FUNCTION (api/progress.ts)
+----------------------------------
+GET/PUT progress per authenticated user. firebase-admin is dynamically
+imported inside a try block so a load/credential error returns a readable JSON
+500 instead of crashing the function. Handles two common PEM paste mistakes
+(surrounding quotes, literal "\n"). Diagnostic endpoint: GET
+/api/progress?debug=1 reports which env vars are present (booleans only).
+Required env vars on Vercel (same values as aws-learn-app's .env.local):
+  FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY
+
+DEPLOYMENT
+----------
+`npm run build` -> dist/. Router uses history URLs, so the host needs an SPA
+fallback to index.html:
+- Vercel: vercel.json (rewrites all non-/api routes to /index.html) — this is
+  the intended host since the serverless function lives in api/.
+- Firebase Hosting: firebase.json (same rewrite, public = dist).
+- Netlify: add public/_redirects with `/* /index.html 200`.
+Enabling DB sync on Vercel = add the three service-account env vars and
+redeploy; the Admin SDK bypasses security rules so nothing needs enabling in
+the Firebase console.
+
+LINK FROM aws-learn-app
+-----------------------
+The old app's top nav has a graduation-cap button that opens this portal in a
+new tab, pointing at NEXT_PUBLIC_DMAT_PORTAL_URL (defaults to
+http://localhost:5173).
+
+KEY FILES MAP
+-------------
+- src/App.tsx ................ shell, routing, auth/progress provider wiring
+- src/lib/types.ts ........... all shared TypeScript types
+- src/lib/topics.ts .......... module + topic definitions, navigation helpers
+- src/lib/auth.tsx ........... client-side login, user list, session
+- src/lib/progress.tsx ....... per-user progress store (localStorage + sync)
+- src/lib/api.ts ............. client for /api/progress
+- src/lib/content/ ........... learn-page content per module (intro, analogy,
+                               worked example, gotchas, quick-check, recap, etc.)
+- src/lib/gen/ ............... deterministic generators (figures/equations/latin)
+- src/lib/diagrams/ .......... library-agnostic node/edge data per diagram
+                               (osi-tcp-ip, trees, deadlocks) + registry
+- src/lib/mock/ .............. mock exam definition + subject questions
+- src/pages/ ................. one file per route
+- src/components/ ............ Sidebar, Timer, QuestionCard, grids, drills, bits,
+                               TopicDiagram (React Flow renderer)
+- api/progress.ts ............ Vercel serverless progress function
+- vercel.json / firebase.json  SPA rewrites for the two hosts

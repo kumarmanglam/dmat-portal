@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { MODULES, TOPICS, topicsOfModule } from "../lib/topics";
+import { CONTENT } from "../lib/content";
 import { useProgress } from "../lib/progress";
 import { ProgressBar, SectionHeading } from "../components/bits";
 
@@ -51,6 +52,18 @@ export function Tracker() {
                   />
                   <Link to={`/learn/${t.id}`}>{t.title}</Link>
                   <span className="mono" style={{ fontSize: "0.66rem", color: "var(--ink-soft)" }}>{t.tag}</span>
+                  {CONTENT[t.id]?.diagram && (
+                    <span
+                      className={`diagram-flag mono${state.viewedDiagrams[t.id] ? " seen" : ""}`}
+                      title={
+                        state.viewedDiagrams[t.id]
+                          ? "Interactive diagram — explored"
+                          : "Has an interactive diagram"
+                      }
+                    >
+                      {state.viewedDiagrams[t.id] ? "◆" : "◇"} diagram
+                    </span>
+                  )}
                   {when && <span className="when">{new Date(when).toLocaleDateString()}</span>}
                 </div>
               );

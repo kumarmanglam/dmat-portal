@@ -1,7 +1,35 @@
 import { Link } from "react-router-dom";
 import { MODULES, TOPICS, topicById, topicsOfModule } from "../lib/topics";
+import { CONTENT } from "../lib/content";
 import { useProgress } from "../lib/progress";
 import { ProgressBar, SectionHeading } from "../components/bits";
+import type { ProgressState } from "../lib/types";
+
+// Topics you've practised but keep getting wrong — the highest-leverage
+// thing to revisit. Only counts topics with real multiple-choice
+// questions (the generated Core drills store answers differently and
+// are skipped). Needs at least 2 answered questions and < 70% correct.
+function weakTopics(state: ProgressState) {
+  return TOPICS.map((t) => {
+    const qs = CONTENT[t.id]?.questions ?? [];
+    if (qs.length === 0) return null;
+    const ans = state.topicAnswers[t.id] ?? {};
+    let answered = 0;
+    let correct = 0;
+    qs.forEach((q, i) => {
+      if (ans[i] !== undefined) {
+        answered++;
+        if (ans[i] === q.answer) correct++;
+      }
+    });
+    if (answered < 2) return null;
+    const pct = Math.round((correct / answered) * 100);
+    return pct < 70 ? { t, pct, answered, correct } : null;
+  })
+    .filter((x): x is NonNullable<typeof x> => x !== null)
+    .sort((a, b) => a.pct - b.pct)
+    .slice(0, 3);
+}
 
 export function Dashboard() {
   const { state, overallPct, completedCount } = useProgress();
@@ -12,6 +40,7 @@ export function Dashboard() {
     TOPICS[0];
 
   const lastAttempt = state.mockAttempts[state.mockAttempts.length - 1];
+  const weak = weakTopics(state);
 
   return (
     <div>
@@ -91,6 +120,24 @@ export function Dashboard() {
             )}
             <Link className="btn primary" to="/mock-exam">Start Mock Exam</Link>
           </div>
+
+          {weak.length > 0 && (
+            <div className="card weak-card">
+              <h3 style={{ fontSize: "1.1rem" }}>Review weak topics</h3>
+              <p style={{ color: "var(--ink-soft)", fontSize: "0.85rem", margin: "4px 0 12px" }}>
+                Lowest quiz accuracy so far — revisit these to lock them in before test day.
+              </p>
+              <div className="weak-list">
+                {weak.map(({ t, pct, correct, answered }) => (
+                  <Link key={t.id} to={`/learn/${t.id}`} className="weak-row">
+                    <span className="weak-name">{t.title}</span>
+                    <span className="weak-score mono">{correct}/{answered}</span>
+                    <span className={`weak-pct mono${pct < 50 ? " low" : ""}`}>{pct}%</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

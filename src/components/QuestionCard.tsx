@@ -8,17 +8,19 @@ export function QuestionCard({
   q,
   chosen,
   onChoose,
+  label,
 }: {
   index: number;
   q: TopicQuestion;
   chosen: number | undefined;
   onChoose: (i: number) => void;
+  label?: string;
 }) {
   const revealed = chosen !== undefined;
   return (
     <div className="qcard">
       <div className="qhead">
-        <span>Q{index + 1}</span>
+        <span>{label ?? `Q${index + 1}`}</span>
         {revealed && (
           <span style={{ color: chosen === q.answer ? "var(--green)" : "var(--red)" }}>
             {chosen === q.answer ? "✓ correct" : "✗ incorrect"}
