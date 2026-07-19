@@ -7,12 +7,19 @@
 // — the pattern from aws-learn-app's DiagramViewport), and the
 // "notes" underneath carry the deep analysis.
 // ============================================================
-import { useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import type { MermaidVisual } from "../lib/diagrams/types";
+import { Loading } from "./bits";
 
 let mermaidPromise: Promise<typeof import("mermaid")["default"]> | null = null;
+
+// Every render() call gets a globally-unique element id. Mermaid keys
+// its temporary DOM node off this id; reusing an id across concurrent
+// renders (as React StrictMode's double-invoked effects do) makes the
+// second render collide and hang, leaving the loader stuck forever.
+let renderSeq = 0;
 
 function loadMermaid() {
   if (!mermaidPromise) {
@@ -49,6 +56,22 @@ function loadMermaid() {
     });
   }
   return mermaidPromise;
+}
+
+// Serialize every render through one promise chain. Mermaid mutates
+// shared global state during a render, so overlapping calls — several
+// diagrams on a page, or StrictMode's paired effect invocations — can
+// deadlock. Queuing guarantees one render completes before the next
+// starts. A failed render still advances the chain.
+let renderChain: Promise<unknown> = Promise.resolve();
+
+function renderMermaid(id: string, chart: string): Promise<{ svg: string }> {
+  const run = renderChain.then(() => loadMermaid().then((m) => m.render(id, chart)));
+  renderChain = run.then(
+    () => undefined,
+    () => undefined
+  );
+  return run as Promise<{ svg: string }>;
 }
 
 function Viewport({ children, full }: { children: React.ReactNode; full: boolean }) {
@@ -89,29 +112,29 @@ function Viewport({ children, full }: { children: React.ReactNode; full: boolean
 }
 
 export function MermaidDiagram({ visual }: { visual: MermaidVisual }) {
-  const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const [svg, setSvg] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [maximized, setMaximized] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    // Fresh id per run so StrictMode's paired invocations never share one.
+    const renderId = `mmd${(renderSeq += 1)}`;
     setSvg("");
     setError(null);
-    loadMermaid()
-      .then((mermaid) => mermaid.render(`mmd${uid}`, visual.chart))
+    renderMermaid(renderId, visual.chart)
       .then(({ svg }) => {
         if (!cancelled) setSvg(svg);
       })
       .catch((e: unknown) => {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
-        // mermaid can leave an orphaned error element behind
-        document.getElementById(`dmmd${uid}`)?.remove();
+        // mermaid can leave an orphaned element behind on failure
+        document.getElementById(`d${renderId}`)?.remove();
       });
     return () => {
       cancelled = true;
     };
-  }, [uid, visual.chart]);
+  }, [visual.chart]);
 
   useEffect(() => {
     if (!maximized) return;
@@ -135,7 +158,7 @@ export function MermaidDiagram({ visual }: { visual: MermaidVisual }) {
   ) : svg ? (
     <div className="mmd-svg" dangerouslySetInnerHTML={{ __html: svg }} />
   ) : (
-    <div className="diagram-loading mono">Rendering diagram…</div>
+    <Loading label="Rendering diagram…" />
   );
 
   const stage = (full: boolean) => (

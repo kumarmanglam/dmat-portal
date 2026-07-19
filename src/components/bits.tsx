@@ -1,4 +1,16 @@
 // Tiny shared UI pieces.
+
+// Animated loading placeholder (spinner + label) used for lazy chunks
+// and async diagram rendering.
+export function Loading({ label }: { label: string }) {
+  return (
+    <div className="diagram-loading" role="status" aria-live="polite">
+      <span className="spinner" aria-hidden="true" />
+      <span className="mono">{label}</span>
+    </div>
+  );
+}
+
 export function ProgressBar({
   pct,
   color,

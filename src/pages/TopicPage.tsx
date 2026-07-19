@@ -6,6 +6,7 @@ import { useProgress } from "../lib/progress";
 import type { TopicQuestion } from "../lib/types";
 import { QuestionCard } from "../components/QuestionCard";
 import { FigureDrill, LatinDrill } from "../components/drills";
+import { Loading } from "../components/bits";
 
 // React Flow, mermaid and all diagram data are heavy, so the whole
 // visuals module is code-split — the initial bundle stays lean.
@@ -88,7 +89,7 @@ export function TopicPage() {
 
       {/* Interactive visuals — node graphs with guided walkthroughs
           and mermaid diagrams, per topic */}
-      <Suspense fallback={<div className="diagram-loading mono">Loading diagrams…</div>}>
+      <Suspense fallback={<Loading label="Loading diagrams…" />}>
         <TopicVisuals topicId={meta.id} />
       </Suspense>
 

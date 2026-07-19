@@ -14,13 +14,13 @@ export const ENCRYPTION_VISUALS: TopicVisual[] = [
     Note over B,S: — ASYMMETRIC PHASE (slow, runs once) —
     B->>S: ClientHello (supported ciphers, random)
     S->>B: ServerHello + certificate (public key, CA-signed)
-    Note left of B: browser verifies the certificate\nchain against trusted CAs —\nidentity, not secrecy
+    Note left of B: browser verifies the certificate<br/>chain against trusted CAs —<br/>identity, not secrecy
     B->>S: key exchange (using server's PUBLIC key)
-    Note over B,S: both sides now derive the same\nsymmetric SESSION KEY —\nit never travelled in the clear
+    Note over B,S: both sides now derive the same<br/>symmetric SESSION KEY —<br/>it never travelled in the clear
     Note over B,S: — SYMMETRIC PHASE (fast, everything else) —
     B->>S: HTTP request, AES-encrypted
     S->>B: HTTP response, AES-encrypted
-    Note over B,S: ~1000× cheaper per byte than RSA —\nthis is why the hybrid exists`,
+    Note over B,S: ~1000× cheaper per byte than RSA —<br/>this is why the hybrid exists`,
     notes: [
       {
         label: "Asymmetric solves distribution, not speed",

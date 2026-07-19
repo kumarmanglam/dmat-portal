@@ -204,11 +204,11 @@ export const OSI_TCP_IP_VISUALS: TopicVisual[] = [
     participant S as Server
     Note over C,S: both sides pick a random initial sequence number (ISN)
     C->>S: SYN (seq = x)
-    Note right of S: server learns x,\nallocates connection state
+    Note right of S: server learns x,<br/>allocates connection state
     S->>C: SYN-ACK (seq = y, ack = x+1)
-    Note left of C: client learns y —\nboth ISNs now known
+    Note left of C: client learns y —<br/>both ISNs now known
     C->>S: ACK (ack = y+1)
-    Note over C,S: connection ESTABLISHED — every later byte is\nnumbered, so loss and reordering are detectable
+    Note over C,S: connection ESTABLISHED — every later byte is<br/>numbered, so loss and reordering are detectable
     C->>S: GET /index.html (seq = x+1)`,
     notes: [
       {
