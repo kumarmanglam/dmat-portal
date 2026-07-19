@@ -765,3 +765,189 @@ details.faq p { color: var(--ink-soft); margin: 10px 0 0; font-size: 0.9rem; }
   .diagram-stage { grid-template-columns: 1fr; }
   .diagram-canvas { height: 340px; }
 }
+
+/* ---------- Diagram legend ---------- */
+.diagram-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-bottom: 10px;
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+}
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.legend-swatch { width: 11px; height: 11px; border-radius: 3px; border: 1.5px solid; background: var(--surface); }
+.legend-swatch.sw-accent { border-color: #d9c286; background: var(--accent-soft); }
+.legend-swatch.sw-blue { border-color: #aecbe8; background: var(--blue-soft); }
+.legend-swatch.sw-green { border-color: #a9dcc2; background: var(--green-soft); }
+.legend-swatch.sw-danger { border-color: #e6b0ac; background: var(--red-soft); }
+.legend-swatch.sw-muted { border-color: var(--line); background: var(--bg); }
+.legend-swatch.sw-default { border-color: var(--line); }
+
+/* ---------- Walkthrough ---------- */
+.walkbar {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.walkbar:has(.walk-step) { border-color: #d9c286; background: #fdfaf3; }
+.walk-hint { font-size: 0.8rem; color: var(--ink-soft); }
+.walkbar > .btn { align-self: flex-start; }
+.walk-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.walk-count { font-size: 0.74rem; color: var(--accent); font-weight: 600; }
+.walk-step b { font-family: "Fraunces", serif; font-size: 0.98rem; }
+.walk-step p { margin: 4px 0 0; font-size: 0.88rem; color: var(--ink); line-height: 1.55; }
+
+/* walkthrough node states */
+.rf-walk-dim { opacity: 0.22; transition: opacity 0.35s ease; }
+.rf-walk-focus { opacity: 1; transition: opacity 0.35s ease; }
+.rf-walk-focus .rf-node {
+  box-shadow: 0 0 0 3px var(--accent-soft), 0 2px 10px rgba(122, 90, 10, 0.22);
+  border-color: var(--accent);
+}
+
+/* ---------- Fullscreen (maximize) ---------- */
+.diagram-max {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 12;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.diagram-max:hover { border-color: var(--accent); color: var(--accent); }
+.diagram-placeholder {
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  padding: 40px 18px;
+  text-align: center;
+  font-size: 0.74rem;
+  color: var(--ink-soft);
+}
+.diagram-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+.diagram-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+.diagram-modal-head b { font-family: "Fraunces", serif; font-size: 1.05rem; }
+.diagram-modal-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 18px 18px;
+  overflow-y: auto;
+}
+.diagram-modal-body .diagram-stage.full {
+  flex: 1;
+  min-height: 320px;
+  grid-template-columns: 1fr 280px;
+}
+.diagram-modal-body .diagram-stage.full .diagram-canvas { height: 100%; min-height: 320px; }
+.diagram-modal-body .mmd-stage.full { flex: 1; min-height: 340px; }
+
+/* ---------- Mermaid diagrams ---------- */
+.mmd-stage {
+  position: relative;
+  height: 460px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.mmd-svg { width: max-content; }
+.mmd-svg svg { display: block; max-width: none; }
+.mmd-toolbar {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 12;
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 3px;
+}
+.mmd-btn {
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mmd-btn:hover { background: var(--bg); color: var(--ink); }
+.mmd-error {
+  padding: 20px;
+  font-size: 0.85rem;
+  color: var(--red);
+}
+.mmd-error pre {
+  white-space: pre-wrap;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 10px;
+}
+.mmd-notes {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+.mmd-note {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.mmd-note-label {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+.mmd-note p { margin: 0; font-size: 0.84rem; color: var(--ink); line-height: 1.5; }
+
+@media (max-width: 900px) {
+  .mmd-stage { height: 360px; }
+  .diagram-modal-body .diagram-stage.full { grid-template-columns: 1fr; }
+  .mmd-notes { grid-template-columns: 1fr; }
+}

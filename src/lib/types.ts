@@ -51,7 +51,7 @@ export interface TopicContent {
   deepDive?: DeepDive[]; // optional expandable depth
   recap?: string; // 2-line restatement of the mental model
   related?: string[]; // ids of related topics to cross-link
-  diagram?: string; // key into the DIAGRAMS registry (interactive node graph)
+  // (interactive diagrams live in src/lib/diagrams, keyed by topic id)
   drill?: "figures" | "latin"; // core topics with generated visual drills
   questions: TopicQuestion[];
 }

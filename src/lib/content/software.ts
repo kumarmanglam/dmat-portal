@@ -107,7 +107,6 @@ export const SOFTWARE_CONTENT: TopicContent[] = [
       "Height decides cost: balanced height ≈ log n; degenerate height = n.",
       "AVL rebalances aggressively (faster lookups); Red-Black rebalances lazily (faster inserts) — both guarantee O(log n).",
     ],
-    diagram: "trees",
     workedExample: {
       scenario:
         "You insert the keys 1, 2, 3 into an empty BST, in that order.",

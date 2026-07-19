@@ -14,8 +14,14 @@ TECH STACK
 ----------
 - Vite + React 18 + TypeScript (client-side SPA).
 - react-router-dom v6 for routing (history/BrowserRouter URLs).
-- @xyflow/react (React Flow) for the interactive topic diagrams; lazy-loaded
-  into its own chunk so it stays out of the initial bundle.
+- @xyflow/react (React Flow) for interactive node-graph diagrams with guided
+  step-by-step walkthroughs (camera flies to focused nodes, rest dims, each
+  step carries deep analysis); mermaid for text-defined diagrams (sequence /
+  ER / class / decision flowcharts); react-zoom-pan-pinch for the mermaid
+  pan/zoom viewport. All of it lazy-loaded (TopicVisuals chunk + mermaid's
+  own per-diagram-type chunks) so the initial bundle stays lean. Both
+  renderers support fullscreen maximize (portal + Esc), a pattern borrowed
+  from aws-learn-app's DiagramViewport.
 - No CSS framework — a single hand-written stylesheet (src/styles.css).
   Fonts: Fraunces, Inter, IBM Plex Mono (Google Fonts).
 - Backend is optional: one Vercel serverless function (api/progress.ts) that
@@ -142,11 +148,17 @@ KEY FILES MAP
 - src/lib/content/ ........... learn-page content per module (intro, analogy,
                                worked example, gotchas, quick-check, recap, etc.)
 - src/lib/gen/ ............... deterministic generators (figures/equations/latin)
-- src/lib/diagrams/ .......... library-agnostic node/edge data per diagram
-                               (osi-tcp-ip, trees, deadlocks) + registry
+- src/lib/diagrams/ .......... library-agnostic visual data, ONE FILE PER
+                               TOPIC (all 20), keyed by topic id in index.ts.
+                               Two kinds: "flow" (node graph + WalkStep
+                               walkthrough + legend) and "mermaid" (chart
+                               source + deep-analysis notes)
 - src/lib/mock/ .............. mock exam definition + subject questions
 - src/pages/ ................. one file per route
 - src/components/ ............ Sidebar, Timer, QuestionCard, grids, drills, bits,
-                               TopicDiagram (React Flow renderer)
+                               TopicVisuals (lazy entry: registry lookup +
+                               viewed-signal), TopicDiagram (React Flow +
+                               walkthrough + fullscreen), MermaidDiagram
+                               (lazy mermaid + zoom viewport + notes)
 - api/progress.ts ............ Vercel serverless progress function
 - vercel.json / firebase.json  SPA rewrites for the two hosts

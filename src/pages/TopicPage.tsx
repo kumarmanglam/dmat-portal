@@ -1,17 +1,16 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { CONTENT } from "../lib/content";
-import { DIAGRAMS } from "../lib/diagrams";
 import { MODULES, neighbours, topicById } from "../lib/topics";
 import { useProgress } from "../lib/progress";
 import type { TopicQuestion } from "../lib/types";
 import { QuestionCard } from "../components/QuestionCard";
 import { FigureDrill, LatinDrill } from "../components/drills";
 
-// React Flow is heavy and only used on graph-shaped topics, so it's
-// code-split into its own chunk — the initial bundle stays lean.
-const TopicDiagram = lazy(() =>
-  import("../components/TopicDiagram").then((m) => ({ default: m.TopicDiagram }))
+// React Flow, mermaid and all diagram data are heavy, so the whole
+// visuals module is code-split — the initial bundle stays lean.
+const TopicVisuals = lazy(() =>
+  import("../components/TopicVisuals").then((m) => ({ default: m.TopicVisuals }))
 );
 
 // A single retrieval question shown right after the concept. Kept in
@@ -45,7 +44,6 @@ export function TopicPage() {
   const completed = Boolean(state.completedTopics[meta.id]);
   const answers = state.topicAnswers[meta.id] ?? {};
   const { prev, next } = neighbours(meta.id);
-  const diagram = content.diagram ? DIAGRAMS[content.diagram] : undefined;
   const related = (content.related ?? [])
     .map((id) => topicById(id))
     .filter((t): t is NonNullable<typeof t> => Boolean(t) && t!.id !== meta.id);
@@ -88,12 +86,11 @@ export function TopicPage() {
         )}
       </div>
 
-      {/* Interactive diagram (graph-shaped topics only) */}
-      {diagram && (
-        <Suspense fallback={<div className="diagram-loading mono">Loading diagram…</div>}>
-          <TopicDiagram data={diagram} topicId={meta.id} />
-        </Suspense>
-      )}
+      {/* Interactive visuals — node graphs with guided walkthroughs
+          and mermaid diagrams, per topic */}
+      <Suspense fallback={<div className="diagram-loading mono">Loading diagrams…</div>}>
+        <TopicVisuals topicId={meta.id} />
+      </Suspense>
 
       {/* Worked example — one concrete case, step by step */}
       {content.workedExample && (

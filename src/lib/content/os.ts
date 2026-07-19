@@ -227,7 +227,6 @@ export const OS_CONTENT: TopicContent[] = [
       "Detection + recovery: let deadlocks happen, find cycles in the wait-for graph, kill/rollback a victim.",
       "Deadlock (nobody moves) ≠ starvation (someone never gets a turn while others do).",
     ],
-    diagram: "deadlocks",
     workedExample: {
       scenario:
         "Thread 1 holds lock A and requests B. Thread 2 holds lock B and requests A. Both wait forever.",

@@ -54,7 +54,6 @@ export const NETWORKS_CONTENT: TopicContent[] = [
     recap:
       "Layering splits networking into independent jobs, and encapsulation wraps data in one header per layer on the way down (stripped on the way up). To debug, ask which layer owns the failure: cable, MAC, IP, connection, or app.",
     related: ["routing-basics", "encryption", "security-goals"],
-    diagram: "osi-tcp-ip",
     questions: [
       {
         prompt:
